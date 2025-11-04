@@ -55,18 +55,17 @@
             <p>Đang xử lý...</p>
         </div>
         
-        <input type="text" id="userId" placeholder="User ID Roblox (auto từ script)" maxlength="20" oninput="validateUserId(this)" />
+        <input type="text" id="userId" placeholder="User ID từ Roblox script" maxlength="20" oninput="validateUserId(this)" />
         
         <button id="checkBtn" class="btn-success" onclick="checkKey()" disabled>Activate Key</button>
-        <button class="export-btn" onclick="exportKeys()">Export Keys CSV</button>
+        <button class="export-btn" onclick="exportKeys()">Export CSV</button>
         
         <div id="result" class="result" style="display: none;"></div>
         
         <div class="info">
             <strong>Hướng dẫn:</strong><br>
             1. Generate key & copy.<br>
-            2. Paste vào Roblox script (UserId auto).<br>
-            3. Check DB: Supabase > Tables.<br>
+            2. Paste vào Roblox script (UserId auto lấy).<br>
             <a href="#" onclick="fetchKeys(); return false;" style="color: #667eea;">View Keys</a> | <a href="#" onclick="cleanup(); return false;">Cleanup Expired</a>
         </div>
     </div>
@@ -88,10 +87,10 @@
             document.getElementById('loading').style.display = 'block';
             try {
                 const res = await fetch(url, options);
-                if (!res.ok) throw new Error(`Error ${res.status}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 return await res.json();
             } catch (err) {
-                throw new Error('Mạng lỗi: ' + err.message);
+                throw new Error('Network error: ' + err.message);
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -102,7 +101,7 @@
             el.textContent = text;
             el.className = `result ${type}`;
             el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 6000);
+            setTimeout(() => el.style.display = 'none', 5000);
         }
 
         async function getKey() {
@@ -115,7 +114,7 @@
                 document.getElementById('checkBtn').disabled = false;
                 updateCountdown();
                 setInterval(updateCountdown, 1000);
-                showResult(`✅ Key mới! Hết hạn: ${new Date(data.expires_at).toLocaleString()}`, 'success');
+                showResult(`✅ Key generated! Expires: ${new Date(data.expires_at).toLocaleString()}`, 'success');
             } catch (err) {
                 showResult('❌ ' + err.message, 'error');
             }
@@ -126,13 +125,13 @@
             const now = Date.now();
             const distance = expiresTime - now;
             if (distance < 0) {
-                document.getElementById('countdown').innerHTML = '⏰ Đã hết hạn!';
+                document.getElementById('countdown').innerHTML = '⏰ Expired!';
                 return;
             }
             const hours = Math.floor(distance / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            document.getElementById('countdown').innerHTML = `⏳ Còn: ${hours}h ${minutes}m ${seconds}s`;
+            document.getElementById('countdown').innerHTML = `Time left: ${hours}h ${minutes}m ${seconds}s`;
         }
 
         async function checkKey() {
@@ -154,7 +153,7 @@
         }
 
         function copyKey() {
-            navigator.clipboard.writeText(currentKey).then(() => showResult('📋 Đã copy key!', 'success'));
+            navigator.clipboard.writeText(currentKey).then(() => showResult('📋 Copied key!', 'success'));
         }
 
         async function fetchKeys() {
@@ -162,7 +161,7 @@
                 const data = await apiCall('/api/keys', { method: 'GET' });
                 showResult(`📊 ${data.keys.length} keys\n${JSON.stringify(data.keys.slice(0, 3), null, 2)}`, 'success');
             } catch (err) {
-                showResult('❌ Lỗi fetch keys', 'error');
+                showResult('❌ Fetch failed', 'error');
             }
         }
 
@@ -176,9 +175,9 @@
                 a.href = url;
                 a.download = 'keys.csv';
                 a.click();
-                showResult('📥 Đã export CSV!', 'success');
+                showResult('📥 Exported CSV!', 'success');
             } catch (err) {
-                showResult('❌ Lỗi export', 'error');
+                showResult('❌ Export failed', 'error');
             }
         }
 
@@ -187,7 +186,7 @@
                 const data = await apiCall('/api/cleanup', { method: 'POST' });
                 showResult(`🧹 Cleaned ${data.cleaned} expired keys`, 'success');
             } catch (err) {
-                showResult('❌ Cleanup fail', 'error');
+                showResult('❌ Cleanup failed', 'error');
             }
         }
 
